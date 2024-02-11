@@ -1,8 +1,27 @@
 #! /bin/bash
 
+check_hostname() {
+    expected_hostnames=("lfs-host" "lfs-guest")
+    current_hostname=$(hostname)
+
+    for expected_hostname in "${expected_hostnames[@]}"; do
+        if [ "$current_hostname" = "$expected_hostname" ]; then
+            echo "Error: This script must not run from host $expected_hostname."
+            exit 1
+        fi
+    done
+
+    echo "Script is allowed to run on host $current_hostname."
+}
+
+# Check correct hosts
+check_hostname
+
 # Install qemu
 qemu_system="qemu-system-x86_64"
 
+# sudo dnf install libguestfs-tools
+#
 if command -v "$qemu_system" &> /dev/null; then
     echo "$qemu_system is installed already."
 else
@@ -78,3 +97,24 @@ virt-install \
   --console pty,target_type=serial \
   --initrd-inject preseed.cfg \
   --extra-args="ks=file:/preseed.cfg console=tty0 console=ttyS0,115200n8 serial"
+
+virt-copy-in -a "$qemu_img" version-check.sh /home/debian/
+virt-copy-in -a "$qemu_img" 01-host-setup.sh /home/debian
+virt-copy-in -a "$qemu_img" 02-lfs-partition.sh /home/debian
+virt-copy-in -a "$qemu_img" 03-acquire-packages.sh /home/debian
+virt-copy-in -a "$qemu_img" 04-misc.sh /home/debian
+virt-copy-in -a "$qemu_img" 05-compiling-cross-toolchain.sh /home/debian
+virt-copy-in -a "$qemu_img" 06-cross-compile-temporary-tools.sh /home/debian
+virt-copy-in -a "$qemu_img" 07-build-tools-in-chroot.sh /home/debian
+virt-copy-in -a "$qemu_img" 08-installing-basic-system-software.sh /home/debian
+virt-copy-in -a "$qemu_img" 09-system-configuration.sh /home/debian
+virt-copy-in -a "$qemu_img" 10-making-lfs-system-bootable.sh /home/debian
+virt-copy-in -a "$qemu_img" 11-create-lfs-release.sh /home/debian
+
+
+cat <<EOF
+After installation, login into the machine and check if versions are correct:
+  - virsh start lfs-host
+  - virsh console lfs-host
+  - bash version-check.sh
+EOF
