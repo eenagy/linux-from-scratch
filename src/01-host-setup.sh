@@ -60,8 +60,21 @@ else
     echo "Checksums do not match. The Debian image may be corrupted."
 fi
 
-qemu_img_name="debian12.img"
+qemu_img="debian12.img"
+qemu_disk_size="169"
+# mkpasswd -m sha-512
 
-qemu-img create -f qcow2 "$qemu_img_name" 20G
-qemu-system-x86_64 -boot d -cdrom "$debian_image" -hda "$qemu_img_name" -m 2G
-
+virsh destroy lfs-host && virsh undefine lfs-host &&  qemu-img create -f qcow2 "$qemu_img" "$qemu_disk_size"G
+virt-install \
+  --name=lfs-host \
+  --memory=2048 \
+  --vcpus=2 \
+  --disk size="$qemu_disk_size",path="$qemu_img",bus=virtio,format=qcow2 \
+  --cdrom="$debian_image" \
+  --network user,model=virtio \
+  --graphics=none \
+  --location="$debian_image" \
+  --os-variant=debian12 \
+  --console pty,target_type=serial \
+  --initrd-inject preseed.cfg \
+  --extra-args="ks=file:/preseed.cfg console=tty0 console=ttyS0,115200n8 serial"
