@@ -26,14 +26,14 @@ if command -v "$qemu_system" &> /dev/null; then
     echo "$qemu_system is installed already."
 else
     echo "$qemu_system is not installing, installing it now"
-    sudo dnf install "$qemu_system"
+    sudo apt install "$qemu_system"
 fi
 
 
 debian_image="debian-12.4.0-amd64-netinst.iso"
+lfs_dir="~/.lfs"
 
-
-if [[ -e "$debian_image" ]]; then 
+if [[ -e "$lfs_dir/$debian_image" ]]; then 
      echo "Image is already downloaded, not downloading it again"
 else
     wget "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/$debian_image"
